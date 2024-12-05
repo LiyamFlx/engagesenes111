@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EngageSense</title>
-
-  <!-- Embedded CSS -->
+  <title>EngageSense - Live Sound Analysis</title>
   <style>
     /* General Styles */
     body {
@@ -15,178 +13,168 @@
       background-color: #1a1a2e;
       color: #f5f5f5;
     }
-
     header {
       background-color: #16213e;
       padding: 20px;
       text-align: center;
     }
-
     header h1 {
       margin: 0;
-      font-size: 2rem;
+      font-size: 2.5rem;
       color: #e94560;
     }
-
-    nav {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin: 20px 0;
-    }
-
-    nav a {
-      color: #f5f5f5;
-      text-decoration: none;
-      padding: 10px 20px;
-      background: #0f3460;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
-    }
-
-    nav a:hover {
-      background-color: #e94560;
-    }
-
-    main {
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
       padding: 20px;
-      text-align: center;
-    }
-
-    footer {
       background-color: #0f3460;
-      padding: 10px;
-      text-align: center;
-      color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     }
-
-    /* Chart Container */
-    .chart-container {
-      max-width: 600px;
+    canvas {
+      display: block;
       margin: 20px auto;
+      border: 2px solid #e94560;
+      border-radius: 5px;
     }
-
-    /* Upload and Record Section */
-    .upload-section, .record-section {
-      margin: 20px auto;
-      max-width: 400px;
-      text-align: left;
-    }
-
-    .upload-section input, .record-section button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      background: #0f3460;
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
       color: #fff;
+      background-color: #16213e;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-
-    .upload-section input:hover, .record-section button:hover {
-      background: #e94560;
+    button:hover {
+      background-color: #e94560;
+    }
+    #metrics p {
+      margin: 10px 0;
+      font-size: 1.2rem;
+    }
+    .navigation-buttons {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
     }
   </style>
 </head>
 <body>
-
-  <!-- Header -->
   <header>
-    <h1>EngageSense</h1>
-    <p>Analyze and measure audience engagement in real-time</p>
+    <h1>EngageSense - Live Sound Analysis</h1>
+    <p>Real-time insights into audience engagement</p>
   </header>
-
-  <!-- Navigation -->
-  <nav>
-    <a href="#upload">Upload Audio</a>
-    <a href="#record">Record Audio</a>
-    <a href="#results">View Results</a>
-  </nav>
-
-  <!-- Main Content -->
-  <main>
-    <!-- Upload Section -->
-    <section id="upload" class="upload-section">
-      <h2>Upload Your Audio</h2>
-      <input type="file" accept=".mp3,.wav" id="audio-upload">
-      <button onclick="handleUpload()">Analyze Upload</button>
-    </section>
-
-    <!-- Record Section -->
-    <section id="record" class="record-section">
-      <h2>Record Your Audio</h2>
-      <button onclick="startRecording()">Start Recording</button>
-      <button onclick="stopRecording()">Stop Recording</button>
-    </section>
-
-    <!-- Results Section -->
-    <section id="results">
-      <h2>Engagement Results</h2>
-      <div class="chart-container">
-        <canvas id="engagementChart"></canvas>
-      </div>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer>
-    <p>&copy; 2024 EngageSense. All Rights Reserved.</p>
-  </footer>
-
-  <!-- Embedded JavaScript -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <div class="container">
+    <h2>Analyze Live Audio</h2>
+    <canvas id="waveform" width="800" height="400"></canvas>
+    <div>
+      <button id="start-analysis">Start Analysis</button>
+      <button id="stop-analysis" disabled>Stop Analysis</button>
+    </div>
+    <div id="metrics">
+      <p id="volume-indicator">Volume: Measuring...</p>
+      <p id="pitch-indicator">Pitch: Waiting...</p>
+      <p id="tempo-indicator">Tempo: Calculating...</p>
+      <p id="activity-indicator">Crowd Activity: Detecting...</p>
+    </div>
+    <div class="navigation-buttons">
+      <button id="back">Back</button>
+      <button id="next">Next</button>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@tonejs/pitch@1.0.0/dist/Pitch.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/meyda/dist/web/meyda.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script>
-    // Simulated Analysis Results
-    const results = {
-      physical: 75,
-      emotional: 85,
-      mental: 90,
-      spiritual: 60
-    };
+    // Audio setup
+    const audioContext = new AudioContext();
+    const analyserNode = audioContext.createAnalyser();
+    const scriptProcessorNode = audioContext.createScriptProcessor(2048, 1, 1);
 
-    // Handle Upload Functionality
-    function handleUpload() {
-      alert('Audio file uploaded successfully! Analysis in progress...');
-      updateChart();
+    let stream, source;
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(s => {
+        stream = s;
+        source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyserNode);
+        analyserNode.connect(scriptProcessorNode);
+        scriptProcessorNode.connect(audioContext.destination);
+      })
+      .catch(err => console.error("Error accessing microphone:", err));
+
+    const canvas = document.getElementById("waveform");
+    const ctx = canvas.getContext("2d");
+
+    // Pitch detection
+    const pitch = new Pitch(analyserNode.fftSize, audioContext.sampleRate);
+
+    async function detectPitch() {
+      const buffer = new Float32Array(analyserNode.fftSize);
+      analyserNode.getFloatTimeDomainData(buffer);
+      const detectedPitch = await pitch.findPitch(buffer);
+      return detectedPitch ? detectedPitch.toFixed(2) : "N/A";
     }
 
-    // Recording Functionality
-    function startRecording() {
-      alert('Recording started...');
+    // Tempo analysis using Meyda
+    const meydaAnalyzer = Meyda.createMeydaAnalyzer({
+      audioContext: audioContext,
+      source: source,
+      bufferSize: 2048,
+      featureExtractors: ["rms", "tempo"],
+    });
+
+    function calculateVolume(dataArray) {
+      const sum = dataArray.reduce((acc, val) => acc + (val - 128) ** 2, 0);
+      return Math.sqrt(sum / dataArray.length);
     }
 
-    function stopRecording() {
-      alert('Recording stopped. Analysis in progress...');
-      updateChart();
+    function drawWaveform() {
+      const bufferLength = analyserNode.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyserNode.getByteTimeDomainData(dataArray);
+
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "white";
+      ctx.beginPath();
+      let x = 0;
+      const sliceWidth = canvas.width / bufferLength;
+      for (let i = 0; i < bufferLength; i++) {
+        const y = (dataArray[i] / 256) * canvas.height;
+        ctx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      ctx.stroke();
+
+      const volume = calculateVolume(dataArray);
+      document.getElementById("volume-indicator").innerText = `Volume: ${volume.toFixed(2)}`;
+
+      const features = meydaAnalyzer.get();
+      if (features && features.tempo) {
+        document.getElementById("tempo-indicator").innerText = `Tempo: ${features.tempo.toFixed(2)} BPM`;
+      }
     }
 
-    // Update Chart with Results
-    function updateChart() {
-      const ctx = document.getElementById('engagementChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Physical', 'Emotional', 'Mental', 'Spiritual'],
-          datasets: [{
-            label: 'Engagement Levels (%)',
-            data: [results.physical, results.emotional, results.mental, results.spiritual],
-            backgroundColor: ['#e94560', '#16213e', '#0f3460', '#1a1a2e'],
-            borderColor: '#f5f5f5',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    }
+    document.getElementById("start-analysis").addEventListener("click", () => {
+      scriptProcessorNode.onaudioprocess = () => {
+        drawWaveform();
+        detectPitch().then(pitch => {
+          document.getElementById("pitch-indicator").innerText = `Pitch: ${pitch} Hz`;
+        });
+      };
+      document.getElementById("start-analysis").disabled = true;
+      document.getElementById("stop-analysis").disabled = false;
+    });
+
+    document.getElementById("stop-analysis").addEventListener("click", () => {
+      scriptProcessorNode.onaudioprocess = null;
+      document.getElementById("start-analysis").disabled = false;
+      document.getElementById("stop-analysis").disabled = true;
+    });
   </script>
 </body>
 </html>
