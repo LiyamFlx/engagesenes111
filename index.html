@@ -3,178 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EngageSense - Live Sound Analysis</title>
+  <title>EngageSense</title>
   <style>
-    /* General Styles */
+    /* Black & White Theme */
     body {
       font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
       margin: 0;
       padding: 0;
-      background-color: #1a1a2e;
-      color: #f5f5f5;
     }
+
     header {
-      background-color: #16213e;
-      padding: 20px;
       text-align: center;
+      padding: 20px;
+      background-color: #111;
     }
+
     header h1 {
       margin: 0;
-      font-size: 2.5rem;
-      color: #e94560;
+      font-size: 2rem;
+      color: #fff;
     }
-    .container {
-      max-width: 900px;
+
+    nav {
+      display: flex;
+      justify-content: center;
+      padding: 10px 0;
+      background-color: #111;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border: 1px solid #fff;
+      border-radius: 5px;
+      margin: 0 5px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    nav a:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    section {
+      text-align: center;
       margin: 20px auto;
       padding: 20px;
-      background-color: #0f3460;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      max-width: 800px;
     }
+
     canvas {
-      display: block;
+      border: 1px solid #fff;
       margin: 20px auto;
-      border: 2px solid #e94560;
-      border-radius: 5px;
+      display: block;
     }
-    button {
-      margin: 10px;
+
+    .btn {
       padding: 10px 20px;
       font-size: 1rem;
+      background-color: #111;
       color: #fff;
-      background-color: #16213e;
-      border: none;
+      border: 1px solid #fff;
       border-radius: 5px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      margin: 5px;
+      transition: background 0.3s, color 0.3s;
     }
-    button:hover {
-      background-color: #e94560;
-    }
-    #metrics p {
-      margin: 10px 0;
-      font-size: 1.2rem;
-    }
-    .navigation-buttons {
-      margin-top: 20px;
-      display: flex;
-      justify-content: space-between;
+
+    .btn:hover {
+      background: #fff;
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>EngageSense - Live Sound Analysis</h1>
-    <p>Real-time insights into audience engagement</p>
-  </header>
-  <div class="container">
-    <h2>Analyze Live Audio</h2>
-    <canvas id="waveform" width="800" height="400"></canvas>
-    <div>
-      <button id="start-analysis">Start Analysis</button>
-      <button id="stop-analysis" disabled>Stop Analysis</button>
-    </div>
-    <div id="metrics">
-      <p id="volume-indicator">Volume: Measuring...</p>
-      <p id="pitch-indicator">Pitch: Waiting...</p>
-      <p id="tempo-indicator">Tempo: Calculating...</p>
-      <p id="activity-indicator">Crowd Activity: Detecting...</p>
-    </div>
-    <div class="navigation-buttons">
-      <button id="back">Back</button>
-      <button id="next">Next</button>
-    </div>
+
+<header>
+  <h1>EngageSense</h1>
+  <p>Audio Engagement Analysis in Real-Time</p>
+</header>
+
+<nav>
+  <a href="#live-analysis">Live Sound Analysis</a>
+  <a href="#upload-record">Upload/Record</a>
+  <a href="#results">Results</a>
+</nav>
+
+<!-- Live Sound Analysis Section -->
+<section id="live-analysis">
+  <h2>Live Sound Analysis</h2>
+  <p>Analyze live audio input in real-time. Start or stop analysis using the buttons below.</p>
+  <canvas id="waveform" width="800" height="400"></canvas>
+  <div>
+    <button id="start-analysis" class="btn">Start Analysis</button>
+    <button id="stop-analysis" class="btn" disabled>Stop Analysis</button>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@tonejs/pitch@1.0.0/dist/Pitch.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/meyda/dist/web/meyda.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script>
-    // Audio setup
-    const audioContext = new AudioContext();
-    const analyserNode = audioContext.createAnalyser();
-    const scriptProcessorNode = audioContext.createScriptProcessor(2048, 1, 1);
+</section>
 
-    let stream, source;
+<!-- Upload/Record Section -->
+<section id="upload-record">
+  <h2>Upload or Record Audio</h2>
+  <div>
+    <h3>Upload Audio</h3>
+    <input type="file" id="audio-upload" accept=".mp3,.wav" class="btn">
+    <button class="btn" onclick="handleUpload()">Analyze Upload</button>
+  </div>
+  <div>
+    <h3>Record Audio</h3>
+    <button class="btn" id="start-recording">Start Recording</button>
+    <button class="btn" id="stop-recording" disabled>Stop Recording</button>
+  </div>
+</section>
+
+<!-- Results Section -->
+<section id="results">
+  <h2>Results</h2>
+  <canvas id="engagement-chart"></canvas>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Live Sound Analysis
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const analyser = audioContext.createAnalyser();
+  const canvas = document.getElementById("waveform");
+  const canvasCtx = canvas.getContext("2d");
+
+  let source;
+  let animationId;
+
+  document.getElementById("start-analysis").addEventListener("click", () => {
     navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(s => {
-        stream = s;
+      .then(stream => {
         source = audioContext.createMediaStreamSource(stream);
-        source.connect(analyserNode);
-        analyserNode.connect(scriptProcessorNode);
-        scriptProcessorNode.connect(audioContext.destination);
+        source.connect(analyser);
+        analyser.fftSize = 2048;
+
+        animationId = requestAnimationFrame(drawWaveform);
+        document.getElementById("start-analysis").disabled = true;
+        document.getElementById("stop-analysis").disabled = false;
       })
-      .catch(err => console.error("Error accessing microphone:", err));
+      .catch(error => console.error("Microphone access denied:", error));
+  });
 
-    const canvas = document.getElementById("waveform");
-    const ctx = canvas.getContext("2d");
+  document.getElementById("stop-analysis").addEventListener("click", () => {
+    cancelAnimationFrame(animationId);
+    source.disconnect();
+    document.getElementById("start-analysis").disabled = false;
+    document.getElementById("stop-analysis").disabled = true;
+  });
 
-    // Pitch detection
-    const pitch = new Pitch(analyserNode.fftSize, audioContext.sampleRate);
+  function drawWaveform() {
+    const bufferLength = analyser.fftSize;
+    const dataArray = new Uint8Array(bufferLength);
 
-    async function detectPitch() {
-      const buffer = new Float32Array(analyserNode.fftSize);
-      analyserNode.getFloatTimeDomainData(buffer);
-      const detectedPitch = await pitch.findPitch(buffer);
-      return detectedPitch ? detectedPitch.toFixed(2) : "N/A";
-    }
+    analyser.getByteTimeDomainData(dataArray);
 
-    // Tempo analysis using Meyda
-    const meydaAnalyzer = Meyda.createMeydaAnalyzer({
-      audioContext: audioContext,
-      source: source,
-      bufferSize: 2048,
-      featureExtractors: ["rms", "tempo"],
+    canvasCtx.fillStyle = "#000";
+    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+    canvasCtx.lineWidth = 2;
+    canvasCtx.strokeStyle = "#fff";
+
+    canvasCtx.beginPath();
+    const sliceWidth = canvas.width / bufferLength;
+    let x = 0;
+
+    dataArray.forEach(value => {
+      const y = (value / 255) * canvas.height;
+      canvasCtx.lineTo(x, y);
+      x += sliceWidth;
     });
 
-    function calculateVolume(dataArray) {
-      const sum = dataArray.reduce((acc, val) => acc + (val - 128) ** 2, 0);
-      return Math.sqrt(sum / dataArray.length);
+    canvasCtx.stroke();
+    animationId = requestAnimationFrame(drawWaveform);
+  }
+
+  // Upload Functionality
+  function handleUpload() {
+    const fileInput = document.getElementById('audio-upload');
+    if (!fileInput.files.length) {
+      alert('Please upload a file!');
+      return;
     }
+    alert('File uploaded and analysis initiated!');
+    updateResults([80, 70, 90, 60]); // Mock data
+  }
 
-    function drawWaveform() {
-      const bufferLength = analyserNode.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      analyserNode.getByteTimeDomainData(dataArray);
+  // Record Audio
+  let mediaRecorder;
+  let audioChunks = [];
 
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "white";
-      ctx.beginPath();
-      let x = 0;
-      const sliceWidth = canvas.width / bufferLength;
-      for (let i = 0; i < bufferLength; i++) {
-        const y = (dataArray[i] / 256) * canvas.height;
-        ctx.lineTo(x, y);
-        x += sliceWidth;
+  document.getElementById("start-recording").addEventListener("click", () => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+        document.getElementById("start-recording").disabled = true;
+        document.getElementById("stop-recording").disabled = false;
+      })
+      .catch(error => console.error("Recording error:", error));
+  });
+
+  document.getElementById("stop-recording").addEventListener("click", () => {
+    mediaRecorder.stop();
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      alert("Recording completed. Analysis initiated.");
+      updateResults([65, 75, 80, 70]); // Mock data
+    };
+
+    document.getElementById("start-recording").disabled = false;
+    document.getElementById("stop-recording").disabled = true;
+  });
+
+  // Results Visualization
+  function updateResults(data) {
+    const ctx = document.getElementById("engagement-chart").getContext("2d");
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ["Physical", "Emotional", "Mental", "Spiritual"],
+        datasets: [{
+          label: 'Engagement Levels (%)',
+          data,
+          backgroundColor: ["#fff", "#ccc", "#999", "#666"]
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
       }
-      ctx.stroke();
-
-      const volume = calculateVolume(dataArray);
-      document.getElementById("volume-indicator").innerText = `Volume: ${volume.toFixed(2)}`;
-
-      const features = meydaAnalyzer.get();
-      if (features && features.tempo) {
-        document.getElementById("tempo-indicator").innerText = `Tempo: ${features.tempo.toFixed(2)} BPM`;
-      }
-    }
-
-    document.getElementById("start-analysis").addEventListener("click", () => {
-      scriptProcessorNode.onaudioprocess = () => {
-        drawWaveform();
-        detectPitch().then(pitch => {
-          document.getElementById("pitch-indicator").innerText = `Pitch: ${pitch} Hz`;
-        });
-      };
-      document.getElementById("start-analysis").disabled = true;
-      document.getElementById("stop-analysis").disabled = false;
     });
+  }
+</script>
 
-    document.getElementById("stop-analysis").addEventListener("click", () => {
-      scriptProcessorNode.onaudioprocess = null;
-      document.getElementById("start-analysis").disabled = false;
-      document.getElementById("stop-analysis").disabled = true;
-    });
-  </script>
 </body>
 </html>
