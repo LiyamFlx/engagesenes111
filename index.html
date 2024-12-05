@@ -5,247 +5,297 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EngageSense</title>
   <style>
-    /* Black & White Theme */
+    /* General Styling */
     body {
-      font-family: Arial, sans-serif;
-      background-color: #000;
-      color: #fff;
       margin: 0;
       padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: black;
+      color: white;
     }
 
-    header {
+    header, footer {
       text-align: center;
       padding: 20px;
-      background-color: #111;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 2rem;
-      color: #fff;
+      background: #111;
     }
 
     nav {
       display: flex;
-      justify-content: center;
-      padding: 10px 0;
-      background-color: #111;
+      justify-content: space-around;
+      padding: 10px;
+      background: #222;
+      position: sticky;
+      top: 0;
     }
 
     nav a {
-      color: #fff;
+      color: white;
       text-decoration: none;
       padding: 10px 20px;
-      border: 1px solid #fff;
       border-radius: 5px;
-      margin: 0 5px;
-      transition: background 0.3s, color 0.3s;
+      background-color: #444;
+      transition: background-color 0.3s;
     }
 
-    nav a:hover {
-      background: #fff;
-      color: #000;
+    nav a.active, nav a:hover {
+      background-color: #0f0;
     }
 
-    section {
-      text-align: center;
-      margin: 20px auto;
+    .section {
       padding: 20px;
       max-width: 800px;
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      background: #0f0;
+      color: black;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #00b000;
+    }
+
+    .progress-bar {
+      margin: 20px auto;
+      width: 80%;
+      height: 10px;
+      background: #444;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar div {
+      width: 0;
+      height: 100%;
+      background: #0f0;
+      transition: width 0.3s;
     }
 
     canvas {
-      border: 1px solid #fff;
+      border: 2px solid #0f0;
       margin: 20px auto;
       display: block;
     }
 
-    .btn {
-      padding: 10px 20px;
-      font-size: 1rem;
-      background-color: #111;
-      color: #fff;
-      border: 1px solid #fff;
-      border-radius: 5px;
-      cursor: pointer;
-      margin: 5px;
-      transition: background 0.3s, color 0.3s;
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
 
-    .btn:hover {
-      background: #fff;
-      color: #000;
+    .results-table th, .results-table td {
+      padding: 10px;
+      border: 1px solid #333;
+    }
+
+    .results-table th {
+      background: #111;
     }
   </style>
 </head>
 <body>
+  <!-- Header -->
+  <header>
+    <h1>EngageSense</h1>
+    <p>Analyze audience engagement in real-time with audio analysis</p>
+  </header>
 
-<header>
-  <h1>EngageSense</h1>
-  <p>Audio Engagement Analysis in Real-Time</p>
-</header>
+  <!-- Navigation -->
+  <nav>
+    <a href="#upload" class="active" onclick="showSection('upload')">Upload</a>
+    <a href="#record" onclick="showSection('record')">Record</a>
+    <a href="#live" onclick="showSection('live')">Live Analysis</a>
+    <a href="#results" onclick="showSection('results')">Results</a>
+  </nav>
 
-<nav>
-  <a href="#live-analysis">Live Sound Analysis</a>
-  <a href="#upload-record">Upload/Record</a>
-  <a href="#results">Results</a>
-</nav>
+  <!-- Sections -->
+  <main>
+    <!-- Upload Section -->
+    <section id="upload" class="section">
+      <h2>Upload Audio</h2>
+      <input type="file" id="audio-upload" accept=".mp3,.wav" multiple>
+      <button onclick="uploadAudio()">Upload and Analyze</button>
+      <div class="progress-bar"><div id="upload-progress"></div></div>
+    </section>
 
-<!-- Live Sound Analysis Section -->
-<section id="live-analysis">
-  <h2>Live Sound Analysis</h2>
-  <p>Analyze live audio input in real-time. Start or stop analysis using the buttons below.</p>
-  <canvas id="waveform" width="800" height="400"></canvas>
-  <div>
-    <button id="start-analysis" class="btn">Start Analysis</button>
-    <button id="stop-analysis" class="btn" disabled>Stop Analysis</button>
-  </div>
-</section>
+    <!-- Record Section -->
+    <section id="record" class="section" style="display: none;">
+      <h2>Record Audio</h2>
+      <button id="start-recording" onclick="startRecording()">Start Recording</button>
+      <button id="stop-recording" onclick="stopRecording()" disabled>Stop Recording</button>
+      <p id="record-timer">00:00</p>
+    </section>
 
-<!-- Upload/Record Section -->
-<section id="upload-record">
-  <h2>Upload or Record Audio</h2>
-  <div>
-    <h3>Upload Audio</h3>
-    <input type="file" id="audio-upload" accept=".mp3,.wav" class="btn">
-    <button class="btn" onclick="handleUpload()">Analyze Upload</button>
-  </div>
-  <div>
-    <h3>Record Audio</h3>
-    <button class="btn" id="start-recording">Start Recording</button>
-    <button class="btn" id="stop-recording" disabled>Stop Recording</button>
-  </div>
-</section>
+    <!-- Live Analysis Section -->
+    <section id="live" class="section" style="display: none;">
+      <h2>Live Sound Analysis</h2>
+      <canvas id="waveform" width="600" height="200"></canvas>
+      <button onclick="startLiveAnalysis()">Start Analysis</button>
+      <button onclick="stopLiveAnalysis()">Stop Analysis</button>
+    </section>
 
-<!-- Results Section -->
-<section id="results">
-  <h2>Results</h2>
-  <canvas id="engagement-chart"></canvas>
-</section>
+    <!-- Results Section -->
+    <section id="results" class="section" style="display: none;">
+      <h2>Engagement Results</h2>
+      <canvas id="results-chart" width="600" height="400"></canvas>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Engagement Type</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody id="results-table">
+          <!-- Dynamic Results -->
+        </tbody>
+      </table>
+    </section>
+  </main>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  // Live Sound Analysis
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const analyser = audioContext.createAnalyser();
-  const canvas = document.getElementById("waveform");
-  const canvasCtx = canvas.getContext("2d");
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2024 EngageSense. All rights reserved.</p>
+  </footer>
 
-  let source;
-  let animationId;
+  <script>
+    // Navigation and Section Management
+    function showSection(sectionId) {
+      document.querySelectorAll('main section').forEach(section => section.style.display = 'none');
+      document.querySelector(`#${sectionId}`).style.display = 'block';
 
-  document.getElementById("start-analysis").addEventListener("click", () => {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        source = audioContext.createMediaStreamSource(stream);
-        source.connect(analyser);
-        analyser.fftSize = 2048;
-
-        animationId = requestAnimationFrame(drawWaveform);
-        document.getElementById("start-analysis").disabled = true;
-        document.getElementById("stop-analysis").disabled = false;
-      })
-      .catch(error => console.error("Microphone access denied:", error));
-  });
-
-  document.getElementById("stop-analysis").addEventListener("click", () => {
-    cancelAnimationFrame(animationId);
-    source.disconnect();
-    document.getElementById("start-analysis").disabled = false;
-    document.getElementById("stop-analysis").disabled = true;
-  });
-
-  function drawWaveform() {
-    const bufferLength = analyser.fftSize;
-    const dataArray = new Uint8Array(bufferLength);
-
-    analyser.getByteTimeDomainData(dataArray);
-
-    canvasCtx.fillStyle = "#000";
-    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-    canvasCtx.lineWidth = 2;
-    canvasCtx.strokeStyle = "#fff";
-
-    canvasCtx.beginPath();
-    const sliceWidth = canvas.width / bufferLength;
-    let x = 0;
-
-    dataArray.forEach(value => {
-      const y = (value / 255) * canvas.height;
-      canvasCtx.lineTo(x, y);
-      x += sliceWidth;
-    });
-
-    canvasCtx.stroke();
-    animationId = requestAnimationFrame(drawWaveform);
-  }
-
-  // Upload Functionality
-  function handleUpload() {
-    const fileInput = document.getElementById('audio-upload');
-    if (!fileInput.files.length) {
-      alert('Please upload a file!');
-      return;
+      document.querySelectorAll('nav a').forEach(link => link.classList.remove('active'));
+      document.querySelector(`nav a[href="#${sectionId}"]`).classList.add('active');
     }
-    alert('File uploaded and analysis initiated!');
-    updateResults([80, 70, 90, 60]); // Mock data
-  }
 
-  // Record Audio
-  let mediaRecorder;
-  let audioChunks = [];
+    // Upload Audio
+    function uploadAudio() {
+      const progressBar = document.getElementById('upload-progress');
+      progressBar.style.width = '0%';
+      setTimeout(() => progressBar.style.width = '100%', 2000);
+      alert('Audio uploaded successfully and analysis started!');
+      setTimeout(updateResults, 3000);
+    }
 
-  document.getElementById("start-recording").addEventListener("click", () => {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
-        audioChunks = [];
+    // Recording Timer
+    let recordingInterval;
+    let recordingSeconds = 0;
 
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    function startRecording() {
+      recordingSeconds = 0;
+      document.getElementById('record-timer').textContent = '00:00';
+      document.getElementById('start-recording').disabled = true;
+      document.getElementById('stop-recording').disabled = false;
 
-        document.getElementById("start-recording").disabled = true;
-        document.getElementById("stop-recording").disabled = false;
-      })
-      .catch(error => console.error("Recording error:", error));
-  });
+      recordingInterval = setInterval(() => {
+        recordingSeconds++;
+        const minutes = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+        const seconds = String(recordingSeconds % 60).padStart(2, '0');
+        document.getElementById('record-timer').textContent = `${minutes}:${seconds}`;
+      }, 1000);
+    }
 
-  document.getElementById("stop-recording").addEventListener("click", () => {
-    mediaRecorder.stop();
-    mediaRecorder.onstop = () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-      alert("Recording completed. Analysis initiated.");
-      updateResults([65, 75, 80, 70]); // Mock data
-    };
+    function stopRecording() {
+      clearInterval(recordingInterval);
+      alert('Recording stopped and analysis started!');
+      document.getElementById('start-recording').disabled = false;
+      document.getElementById('stop-recording').disabled = true;
+      setTimeout(updateResults, 3000);
+    }
 
-    document.getElementById("start-recording").disabled = false;
-    document.getElementById("stop-recording").disabled = true;
-  });
+    // Live Sound Analysis
+    let audioContext, analyser, dataArray, animationId;
 
-  // Results Visualization
-  function updateResults(data) {
-    const ctx = document.getElementById("engagement-chart").getContext("2d");
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ["Physical", "Emotional", "Mental", "Spiritual"],
-        datasets: [{
-          label: 'Engagement Levels (%)',
-          data,
-          backgroundColor: ["#fff", "#ccc", "#999", "#666"]
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
+    function startLiveAnalysis() {
+      audioContext = new AudioContext();
+      analyser = audioContext.createAnalyser();
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          const source = audioContext.createMediaStreamSource(stream);
+          source.connect(analyser);
+          visualizeLiveWaveform();
+        })
+        .catch(err => console.error('Error accessing audio input:', err));
+    }
+
+    function stopLiveAnalysis() {
+      cancelAnimationFrame(animationId);
+      audioContext.close();
+    }
+
+    function visualizeLiveWaveform() {
+      const canvas = document.getElementById('waveform');
+      const ctx = canvas.getContext('2d');
+
+      function draw() {
+        analyser.getByteTimeDomainData(dataArray);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#0f0';
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width / dataArray.length;
+        let x = 0;
+
+        for (let i = 0; i < dataArray.length; i++) {
+          const v = dataArray[i] / 128;
+          const y = (v * canvas.height) / 2;
+
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          x += sliceWidth;
         }
-      }
-    });
-  }
-</script>
 
+        ctx.stroke();
+        animationId = requestAnimationFrame(draw);
+      }
+
+      draw();
+    }
+
+    // Update Results
+    function updateResults() {
+      const results = {
+        Physical: 75,
+        Emotional: 85,
+        Mental: 90,
+        Spiritual: 65,
+      };
+
+      const resultsTable = document.getElementById('results-table');
+      resultsTable.innerHTML = '';
+
+      Object.entries(results).forEach(([key, value]) => {
+        const row = `<tr><td>${key}</td><td>${value}%</td></tr>`;
+        resultsTable.innerHTML += row;
+      });
+
+      const ctx = document.getElementById('results-chart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(results),
+          datasets: [{
+            label: 'Engagement Levels (%)',
+            data: Object.values(results),
+            backgroundColor: ['#0f0', '#ff0', '#00f', '#f00'],
+          }]
+        }
+      });
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
