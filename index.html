@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EngageSense</title>
-  <meta name="description" content="Analyze and measure audience engagement in real-time with EngageSense. Upload or record audio to get detailed engagement results.">
-  <meta name="keywords" content="EngageSense, audience engagement, audio analysis, real-time analysis">
 
   <!-- Embedded CSS -->
   <style>
@@ -90,34 +88,6 @@
     .upload-section input:hover, .record-section button:hover {
       background: #e94560;
     }
-
-    /* Loading Spinner */
-    .spinner {
-      display: none;
-      border: 4px solid #f3f3f3;
-      border-radius: 50%;
-      border-top: 4px solid #e94560;
-      width: 40px;
-      height: 40px;
-      animation: spin 2s linear infinite;
-      margin: 20px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Media Queries */
-    @media (max-width: 600px) {
-      nav {
-        flex-direction: column;
-      }
-
-      .upload-section, .record-section {
-        max-width: 100%;
-      }
-    }
   </style>
 </head>
 <body>
@@ -140,7 +110,7 @@
     <!-- Upload Section -->
     <section id="upload" class="upload-section">
       <h2>Upload Your Audio</h2>
-      <input type="file" accept=".mp3,.wav" id="audio-upload" aria-label="Upload your audio file">
+      <input type="file" accept=".mp3,.wav" id="audio-upload">
       <button onclick="handleUpload()">Analyze Upload</button>
     </section>
 
@@ -150,9 +120,6 @@
       <button onclick="startRecording()">Start Recording</button>
       <button onclick="stopRecording()">Stop Recording</button>
     </section>
-
-    <!-- Loading Spinner -->
-    <div class="spinner" id="spinner" aria-live="polite"></div>
 
     <!-- Results Section -->
     <section id="results">
@@ -181,18 +148,8 @@
 
     // Handle Upload Functionality
     function handleUpload() {
-      const fileInput = document.getElementById('audio-upload');
-      if (fileInput.files.length === 0) {
-        alert('Please select a file to upload.');
-        return;
-      }
-
-      document.getElementById('spinner').style.display = 'block';
-      setTimeout(() => {
-        document.getElementById('spinner').style.display = 'none';
-        alert('Audio file uploaded successfully! Analysis in progress...');
-        updateChart();
-      }, 2000);
+      alert('Audio file uploaded successfully! Analysis in progress...');
+      updateChart();
     }
 
     // Recording Functionality
